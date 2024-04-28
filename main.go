@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"sync"
 )
 
 // Task represents a single task in a workflow
@@ -30,11 +31,35 @@ func executeWorkflow(workflow Workflow) {
 }
 
 func main() {
-	var workflow Workflow = Workflow{Name: "Test WF",
-		Tasks: []Task{{
-			Name: "Task 1",
-			HTTPRequest: "http://localhost:8080",
-		}}}
 
-	executeWorkflow(workflow)
+	var workflows = map[string]Workflow{
+		"Workflow-1": {
+			Name: "Workflow-1",
+			Tasks: []Task{
+				{Name: "Task-1", HTTPRequest: "Fetch document"},
+				{Name: "Task-2", HTTPRequest: "Extract content"},
+				{Name: "Task-3", HTTPRequest: "Post-process content"},
+			},
+		},
+		"Workflow-2": {
+			Name: "Workflow-2",
+			Tasks: []Task{
+				{Name: "Task-1", HTTPRequest: "Aggregate data"},
+				{Name: "Task-2", HTTPRequest: "Transform aggregated data"},
+			},
+		},
+	}
+
+	// Execute the workflows concurrently
+	var wg sync.WaitGroup
+	for _, wf := range workflows {
+		wg.Add(1)
+
+		go func(w Workflow) {
+			defer wg.Done()
+			executeWorkflow(w)
+		}(wf)
+	}
+
+	wg.Wait()
 }
